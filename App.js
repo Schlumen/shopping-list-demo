@@ -1,4 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Alert } from 'react-native';
+import { useNetInfo } from '@react-native-community/netinfo';
+import { useEffect } from 'react';
 
 // import react Navigation
 import { NavigationContainer } from '@react-navigation/native';
@@ -9,13 +11,14 @@ const Stack = createNativeStackNavigator();
 
 // import firebase and firestore
 import { initializeApp } from 'firebase/app'
-import { getFirestore } from 'firebase/firestore'
+import { getFirestore, disableNetwork, enableNetwork } from 'firebase/firestore'
 
 // import the screens
 import ShoppingLists from './components/ShoppingLists';
 import Welcome from './components/Welcome';
 
 export default function App() {
+    const connectionStatus = useNetInfo();
 
     // Web app's Firebase configuration
     const firebaseConfig = {
@@ -33,6 +36,16 @@ export default function App() {
     // Initialize Cloud Firestore and get a reference to the service
     const db = getFirestore(app);
 
+
+    useEffect(() => {
+        if (connectionStatus.isConnected === false) {
+            Alert.alert("Connection lost!");
+            disableNetwork(db);
+        } else {
+            enableNetwork(db);
+        }
+    }, [connectionStatus.isConnected]);
+
     return (
         <NavigationContainer>
             <Stack.Navigator initialRouteName='Welcome'>
@@ -40,7 +53,7 @@ export default function App() {
                 <Stack.Screen
                     name='ShoppingLists'
                 >
-                    {props => <ShoppingLists db={db} {...props} />}
+                    {props => <ShoppingLists isConnected={connectionStatus.isConnected} db={db} {...props} />}
                 </Stack.Screen>
             </Stack.Navigator>
         </NavigationContainer>
